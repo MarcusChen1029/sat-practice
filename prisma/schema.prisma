@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Question {
+  id              String   @id
+  assessment      String
+  test            String
+  domain          String
+  skill           String
+  difficulty      String
+  stimulus        String
+  prompt          String
+  correctChoice   String
+  rationale       String
+  hasVisual       Boolean  @default(false)
+  visualType      String?
+  visualImagePath String?
+  visualData      String?
+  sourcePage      Int
+  createdAt       DateTime @default(now())
+
+  choices  Choice[]
+  attempts Attempt[]
+  bookmark Bookmark?
+}
+
+model Choice {
+  id         Int    @id @default(autoincrement())
+  questionId String
+  letter     String
+  text       String
+  rationale  String?
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, letter])
+}
+
+model Attempt {
+  id          Int      @id @default(autoincrement())
+  questionId  String
+  chosen      String
+  isCorrect   Boolean
+  timeSpentMs Int
+  mode        String
+  testId      String?
+  createdAt   DateTime @default(now())
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Bookmark {
+  questionId String   @id
+  note       String?
+  createdAt  DateTime @default(now())
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model TestSession {
+  id           String    @id @default(cuid())
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  durationSec  Int
+  questionIds  String
+  status       String
+}
