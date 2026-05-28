@@ -1,0 +1,11 @@
+node_modules
+.next
+.env*
+!.env.example
+prisma/dev.db
+prisma/dev.db-journal
+data/work/
+public/images/q/
+.DS_Store
+*.log
+.vitest-cache
