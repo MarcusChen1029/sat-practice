@@ -78,7 +78,7 @@ export function PracticeClient() {
 
   return (
     <div className="grid gap-6 md:grid-cols-[240px,1fr]">
-      <aside className="space-y-5 rounded-2xl bg-white/60 p-5 ring-1 ring-slate-200/70 backdrop-blur md:sticky md:top-20 md:h-fit dark:bg-slate-900/40 dark:ring-slate-800">
+      <aside className="space-y-5 self-start rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70 dark:bg-slate-900/70 dark:ring-slate-800">
         <div>
           <label className={labelClass}>Test</label>
           <select className={selectClass} value={filters.test} onChange={(e) => setFilters({ ...filters, test: e.target.value })}>
