@@ -9,3 +9,13 @@ public/images/q/
 .DS_Store
 *.log
 .vitest-cache
+
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Local scratch / inspection (not for the repo)
+data/source.pdf
+data/inspect_output.txt
+data/work-more-inspect.txt
+scripts/inspect_more.py
+scripts/chunk_more_pdf.py

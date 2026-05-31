@@ -1,5 +1,25 @@
 export type ChoiceLetter = "A" | "B" | "C" | "D";
 
+export type VisualTable = {
+  kind: "table";
+  title?: string;
+  columns: string[];
+  rows: (string | number)[][];
+  note?: string;
+};
+
+export type VisualChart = {
+  kind: "bar" | "line";
+  title?: string;
+  xLabel?: string;
+  yLabel?: string;
+  categories: string[];
+  series: { name: string; values: (number | null)[] }[];
+  note?: string;
+};
+
+export type VisualData = VisualTable | VisualChart;
+
 export type PublicChoice = {
   letter: ChoiceLetter;
   text: string;
@@ -21,7 +41,7 @@ export type PublicQuestion = {
   hasVisual: boolean;
   visualType: string | null;
   visualImagePath: string | null;
-  visualData: unknown | null;
+  visualData: VisualData | null;
   sourcePage: number;
   choices: PublicChoice[];
 };

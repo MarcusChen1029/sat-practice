@@ -15,27 +15,42 @@ async function fetchStats() {
 export default async function HomePage() {
   const stats = await fetchStats();
   const accuracy = Math.round((stats?.overallAccuracy ?? 0) * 100);
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
   return (
     <>
       <NavBar />
-      <main className="mx-auto max-w-6xl px-6 py-10">
-        <header className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:ring-indigo-900">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-indigo-500" />
-            Dashboard
+      <main className="mx-auto max-w-6xl px-6 py-12">
+        {/* Header */}
+        <header className="relative mb-10">
+          <div className="flex items-baseline justify-between border-b border-rule pb-3">
+            <span className="kicker">Dashboard</span>
+            <span className="text-[13px] font-semibold text-ink-3">
+              {today}
+            </span>
           </div>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl dark:text-slate-50">
-            Welcome back.
+          <h1 className="mt-6 text-[40px] font-bold leading-tight tracking-tight text-ink sm:text-[52px]">
+            Welcome back
           </h1>
-          <p className="mt-2 max-w-xl text-base text-slate-600 dark:text-slate-400">
-            Pick up where you left off, run a timed mock, or review your past attempts.
+          <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-ink-2">
+            Pick up where you left off, sit a timed mock, or revisit the
+            questions that tripped you up. Explanations stay hidden until you
+            commit to an answer.
           </p>
         </header>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <StatChip label="Attempted" value={stats?.totalAttempts ?? 0} accent="indigo" />
-          <StatChip label="Correct" value={stats?.correctAttempts ?? 0} accent="emerald" />
-          <StatChip label="Accuracy" value={`${accuracy}%`} accent={accuracy >= 70 ? "emerald" : accuracy >= 40 ? "amber" : "rose"} />
-        </div>
+
+        {/* Stats */}
+        <section>
+          <div className="mb-3">
+            <div className="kicker">At a glance</div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <StatChip label="Attempted" value={stats?.totalAttempts ?? 0} accent="indigo" />
+            <StatChip label="Correct" value={stats?.correctAttempts ?? 0} accent="emerald" />
+            <StatChip label="Accuracy" value={`${accuracy}%`} accent={accuracy >= 70 ? "emerald" : accuracy >= 40 ? "amber" : "rose"} />
+          </div>
+        </section>
+
         <HomeClient stats={stats} />
       </main>
     </>

@@ -10,8 +10,18 @@ type FilterState = {
   status: "all" | "unseen" | "wrong" | "bookmarked";
 };
 
+const TEST_OPTIONS = ["Reading and Writing", "Math"];
+const DIFFICULTY_OPTIONS = ["Easy", "Medium", "Hard"];
+const STATUS_OPTIONS: { value: FilterState["status"]; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "unseen", label: "Unseen" },
+  { value: "wrong", label: "Wrong" },
+  { value: "bookmarked", label: "Bookmarked" },
+];
+
 export function PracticeClient() {
   const [filters, setFilters] = useState<FilterState>({ test: "", domain: "", skill: "", difficulty: "", status: "all" });
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [list, setList] = useState<PublicQuestion[]>([]);
   const [cursor, setCursor] = useState(0);
   const [question, setQuestion] = useState<PublicQuestion | null>(null);
@@ -19,6 +29,7 @@ export function PracticeClient() {
   const [submitted, setSubmitted] = useState(false);
   const [revealed, setRevealed] = useState<RevealedQuestion | null>(null);
   const [startedAt, setStartedAt] = useState<number>(Date.now());
+  const [bookmarked, setBookmarked] = useState(false);
 
   const loadList = useCallback(async () => {
     const params = new URLSearchParams();
@@ -37,7 +48,7 @@ export function PracticeClient() {
     if (!id) return;
     fetch(`/api/questions/${id}`).then(r => r.json()).then(q => {
       setQuestion(q);
-      setChosen(null); setSubmitted(false); setRevealed(null);
+      setChosen(null); setSubmitted(false); setRevealed(null); setBookmarked(false);
       setStartedAt(Date.now());
     });
   }, [list, cursor]);
@@ -59,6 +70,9 @@ export function PracticeClient() {
   function next() {
     if (cursor + 1 < list.length) setCursor(cursor + 1);
   }
+  function prev() {
+    if (cursor > 0) setCursor(cursor - 1);
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -66,137 +80,179 @@ export function PracticeClient() {
       if (!submitted && /^[abcd]$/i.test(e.key)) setChosen(e.key.toUpperCase());
       else if (!submitted && e.key === "Enter" && chosen) submit();
       else if (submitted && e.key === "ArrowRight") next();
+      else if (e.key === "ArrowLeft") prev();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
 
   const progressPct = list.length > 0 ? Math.round(((cursor + 1) / list.length) * 100) : 0;
-  const selectClass =
-    "mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900";
-  const labelClass = "block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400";
+  const activeFilterCount =
+    (filters.test ? 1 : 0) +
+    (filters.difficulty ? 1 : 0) +
+    (filters.status !== "all" ? 1 : 0);
 
   return (
-    <div className="grid gap-6 md:grid-cols-[240px,1fr]">
-      <aside className="space-y-5 self-start rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70 dark:bg-slate-900/70 dark:ring-slate-800">
-        <div>
-          <label className={labelClass}>Test</label>
-          <select className={selectClass} value={filters.test} onChange={(e) => setFilters({ ...filters, test: e.target.value })}>
-            <option value="">Any</option>
-            <option>Reading and Writing</option>
-            <option>Math</option>
-          </select>
+    <div className="space-y-6">
+      {/* ── Top filter bar (no longer blocking) ────────────── */}
+      <div className="paper-card-flat overflow-hidden">
+        <button
+          onClick={() => setFiltersOpen((v) => !v)}
+          className="flex w-full items-center justify-between px-5 py-3 transition hover:bg-paper-2/50"
+        >
+          <span className="flex items-center gap-3">
+            <span className="kicker">Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="font-mono text-[10.5px] text-ink-2">
+                {activeFilterCount} active
+              </span>
+            )}
+          </span>
+          <span className="flex items-center gap-4 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
+            <span className="num text-ink">
+              {list.length > 0 ? `${cursor + 1} / ${list.length}` : "0 / 0"}
+            </span>
+            <span className="text-ink-2">{filtersOpen ? "− Close" : "+ Open"}</span>
+          </span>
+        </button>
+
+        {filtersOpen && (
+          <div className="space-y-4 border-t border-ink/15 px-5 py-4">
+            <FilterRow label="Test">
+              <FilterChip
+                active={filters.test === ""}
+                onClick={() => setFilters({ ...filters, test: "" })}
+              >Any</FilterChip>
+              {TEST_OPTIONS.map((t) => (
+                <FilterChip
+                  key={t}
+                  active={filters.test === t}
+                  onClick={() => setFilters({ ...filters, test: t })}
+                >{t}</FilterChip>
+              ))}
+            </FilterRow>
+            <FilterRow label="Difficulty">
+              <FilterChip
+                active={filters.difficulty === ""}
+                onClick={() => setFilters({ ...filters, difficulty: "" })}
+              >Any</FilterChip>
+              {DIFFICULTY_OPTIONS.map((d) => (
+                <FilterChip
+                  key={d}
+                  active={filters.difficulty === d}
+                  onClick={() => setFilters({ ...filters, difficulty: d })}
+                >{d}</FilterChip>
+              ))}
+            </FilterRow>
+            <FilterRow label="Status">
+              {STATUS_OPTIONS.map((s) => (
+                <FilterChip
+                  key={s.value}
+                  active={filters.status === s.value}
+                  onClick={() => setFilters({ ...filters, status: s.value })}
+                >{s.label}</FilterChip>
+              ))}
+            </FilterRow>
+          </div>
+        )}
+
+        {/* Progress strip — always visible */}
+        <div className="h-[4px] w-full bg-paper-3">
+          <div
+            className="h-full bg-oxblood transition-all duration-300"
+            style={{ width: `${progressPct}%` }}
+          />
         </div>
-        <div>
-          <label className={labelClass}>Difficulty</label>
-          <select className={selectClass} value={filters.difficulty} onChange={(e) => setFilters({ ...filters, difficulty: e.target.value })}>
-            <option value="">Any</option>
-            <option>Easy</option>
-            <option>Medium</option>
-            <option>Hard</option>
-          </select>
-        </div>
-        <div>
-          <label className={labelClass}>Status</label>
-          <select
-            className={selectClass}
-            value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value as FilterState["status"] })}
-          >
-            <option value="all">All</option>
-            <option value="unseen">Unseen</option>
-            <option value="wrong">Wrong</option>
-            <option value="bookmarked">Bookmarked</option>
-          </select>
-        </div>
-        <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
-          {list.length === 0 ? (
-            <p className="text-xs text-slate-500 dark:text-slate-400">No questions match</p>
-          ) : (
-            <>
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Progress
-                </span>
-                <span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
-                  {cursor + 1} / {list.length}
-                </span>
-              </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all"
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
-            </>
-          )}
-          <p className="mt-4 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-            <kbd className="rounded border border-slate-300 bg-white px-1.5 font-mono text-[10px] text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">A-D</kbd>{" "}
-            choose ·{" "}
-            <kbd className="rounded border border-slate-300 bg-white px-1.5 font-mono text-[10px] text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">Enter</kbd>{" "}
-            submit ·{" "}
-            <kbd className="rounded border border-slate-300 bg-white px-1.5 font-mono text-[10px] text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">→</kbd>{" "}
-            next
+      </div>
+
+      {/* ── Question / state ────────────────────────────── */}
+      {!question ? (
+        <div className="paper-card-flat flex h-64 items-center justify-center">
+          <p className="text-[15px] text-ink-3">
+            {list.length === 0 ? "No questions match these filters." : "Loading…"}
           </p>
         </div>
-      </aside>
-      <section>
-        {!question ? (
-          <div className="flex h-64 items-center justify-center rounded-2xl bg-white/50 ring-1 ring-slate-200/70 dark:bg-slate-900/40 dark:ring-slate-800">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {list.length === 0 ? "No questions match filters." : "Loading…"}
-            </p>
-          </div>
-        ) : (
-          <>
-            <QuestionCard q={question}>
-              {question.choices.map((c) => {
-                const isCorrectChoice = revealed?.correctChoice === c.letter;
-                let state: "idle" | "selected" | "correct" | "wrong" | "revealed-correct" = "idle";
-                if (!submitted && chosen === c.letter) state = "selected";
-                else if (submitted && chosen === c.letter) state = isCorrectChoice ? "correct" : "wrong";
-                else if (submitted && isCorrectChoice) state = "revealed-correct";
-                return (
-                  <ChoiceButton
-                    key={c.letter}
-                    letter={c.letter}
-                    text={c.text}
-                    state={state}
-                    onClick={() => !submitted && setChosen(c.letter)}
-                    disabled={submitted}
-                  />
-                );
-              })}
-            </QuestionCard>
-            <div className="mt-5 flex flex-wrap gap-3">
-              {!submitted ? (
-                <button onClick={submit} disabled={!chosen} className="btn-primary">
-                  Submit answer
-                </button>
-              ) : (
-                <button onClick={next} className="btn-secondary">
-                  Next question <span aria-hidden>→</span>
-                </button>
-              )}
-              {submitted && question && (
-                <button
-                  onClick={async () => {
-                    await fetch("/api/bookmarks", {
-                      method: "POST",
-                      headers: { "content-type": "application/json" },
-                      body: JSON.stringify({ questionId: question.id }),
-                    });
-                  }}
-                  className="btn-ghost"
-                >
-                  ☆ Bookmark
-                </button>
-              )}
+      ) : (
+        <>
+          <QuestionCard q={question}>
+            {question.choices.map((c) => {
+              const isCorrectChoice = revealed?.correctChoice === c.letter;
+              let state: "idle" | "selected" | "correct" | "wrong" | "revealed-correct" = "idle";
+              if (!submitted && chosen === c.letter) state = "selected";
+              else if (submitted && chosen === c.letter) state = isCorrectChoice ? "correct" : "wrong";
+              else if (submitted && isCorrectChoice) state = "revealed-correct";
+              return (
+                <ChoiceButton
+                  key={c.letter}
+                  letter={c.letter}
+                  text={c.text}
+                  state={state}
+                  onClick={() => !submitted && setChosen(c.letter)}
+                  disabled={submitted}
+                />
+              );
+            })}
+          </QuestionCard>
+
+          {/* Action bar */}
+          <div className="flex flex-wrap items-center gap-3">
+            {!submitted ? (
+              <button onClick={submit} disabled={!chosen} className="btn-primary">
+                Submit answer
+              </button>
+            ) : (
+              <button onClick={next} className="btn-primary" disabled={cursor + 1 >= list.length}>
+                Next →
+              </button>
+            )}
+            {submitted && question && (
+              <button
+                onClick={async () => {
+                  await fetch("/api/bookmarks", {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ questionId: question.id }),
+                  });
+                  setBookmarked(true);
+                }}
+                className="btn-ghost"
+                disabled={bookmarked}
+              >
+                {bookmarked ? "✓ Bookmarked" : "☆ Bookmark"}
+              </button>
+            )}
+            <div className="ml-auto font-mono text-[10.5px] uppercase tracking-[0.18em] text-ink-3">
+              <span className="kbd">A</span><span className="kbd">B</span><span className="kbd">C</span><span className="kbd">D</span>{" "}
+              choose ·{" "}
+              <span className="kbd">↵</span> submit ·{" "}
+              <span className="kbd">→</span> next
             </div>
-            {revealed && <RationalePanel q={revealed} chosen={chosen ?? ""} />}
-          </>
-        )}
-      </section>
+          </div>
+
+          {revealed && <RationalePanel q={revealed} chosen={chosen ?? ""} />}
+        </>
+      )}
     </div>
+  );
+}
+
+function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="mr-2 w-20 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function FilterChip({
+  active, onClick, children,
+}: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className="filter-chip" data-active={active}>
+      {children}
+    </button>
   );
 }

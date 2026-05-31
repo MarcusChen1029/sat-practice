@@ -2,7 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import path from "node:path";
 
-const dbUrl = path.join(process.cwd(), "prisma", "dev.db");
+// Tests run against a throwaway copy so they can never wipe real data.
+const dbFile = process.env.VITEST ? "test.db" : "dev.db";
+const dbUrl = path.join(process.cwd(), "prisma", dbFile);
 
 function createClient(): PrismaClient {
   const adapter = new PrismaBetterSqlite3({ url: dbUrl });

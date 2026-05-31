@@ -5,11 +5,14 @@ export default function PracticePage() {
   return (
     <>
       <NavBar />
-      <main className="mx-auto max-w-5xl px-6 py-10">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Practice</h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Filter the bank, answer at your own pace, and reveal explanations once you submit.
+      <main className="mx-auto max-w-6xl px-6 py-10">
+        <header className="mb-7">
+          <div className="kicker">Practice</div>
+          <h1 className="mt-2 text-[32px] font-bold leading-tight tracking-tight text-ink sm:text-[40px]">
+            One question at a time
+          </h1>
+          <p className="mt-3 max-w-2xl text-[16px] leading-relaxed text-ink-2">
+            Filter the bank and work at your own pace. Explanations stay hidden until you submit.
           </p>
         </header>
         <PracticeClient />

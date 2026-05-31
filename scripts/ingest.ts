@@ -1,18 +1,17 @@
 /* Orchestrator: scans data/work/q-XXX-<id>/question.json (produced by subagents)
-   and loads each into the DB. Crops visuals if visualBbox is present. */
+   and loads each into the DB. Visuals are rendered client-side from structured
+   visualData (tables / charts) — no source images are embedded, so answer text
+   that may appear beside a figure on the PDF page can never leak. */
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { IngestQuestionSchema } from "../src/lib/schemas";
 import { upsertIngestQuestion } from "../src/lib/ingestLoad";
 
 const ROOT = path.resolve(__dirname, "..");
 const WORK = path.join(ROOT, "data", "work");
-const IMG_DIR = path.join(ROOT, "public", "images", "q");
 const REPORT = path.join(WORK, "ingest-report.md");
 
 async function main() {
-  await fs.mkdir(IMG_DIR, { recursive: true });
   const entries = (await fs.readdir(WORK, { withFileTypes: true }))
     .filter(d => d.isDirectory() && d.name.startsWith("q-"))
     .map(d => path.join(WORK, d.name));
@@ -29,24 +28,12 @@ async function main() {
       const parsed = IngestQuestionSchema.safeParse(raw);
       if (!parsed.success) { failed++; lines.push(`- ${path.basename(dir)}: FAIL - schema: ${JSON.stringify(parsed.error.flatten())}`); continue; }
 
-      let visualImagePath: string | null = null;
-      if (parsed.data.hasVisual && parsed.data.visualBbox) {
-        const dst = path.join(IMG_DIR, `${parsed.data.id}.png`);
-        const src = path.join(dir, "question.png");
-        const r = spawnSync("python", [path.join(ROOT, "scripts", "crop_image.py"), JSON.stringify({ src, dst, bbox: parsed.data.visualBbox })]);
-        if (r.status === 0) visualImagePath = `/images/q/${parsed.data.id}.png`;
-        else lines.push(`  - crop failed: ${r.stderr?.toString()}`);
-      } else if (parsed.data.hasVisual) {
-        // No bbox provided but visual exists - use the full question PNG so user at least sees something
-        const dst = path.join(IMG_DIR, `${parsed.data.id}.png`);
-        const src = path.join(dir, "question.png");
-        try {
-          await fs.copyFile(src, dst);
-          visualImagePath = `/images/q/${parsed.data.id}.png`;
-        } catch { /* no PNG available */ }
+      // Visuals are rendered from visualData; never embed source images.
+      if (parsed.data.hasVisual && parsed.data.visualData == null) {
+        lines.push(`  - ${parsed.data.id}: WARN hasVisual but no visualData (figure will be blank)`);
       }
 
-      await upsertIngestQuestion(parsed.data, visualImagePath);
+      await upsertIngestQuestion(parsed.data, null);
       ok++; lines.push(`- ${path.basename(dir)}: OK (${parsed.data.id})`);
     } catch (e: any) {
       failed++; lines.push(`- ${path.basename(dir)}: ERROR - ${e?.message ?? e}`);

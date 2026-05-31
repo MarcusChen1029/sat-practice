@@ -14,17 +14,17 @@ export function ReviewClient() {
 
   return (
     <>
-      <div className="mb-4 flex gap-2">
-        <button onClick={() => setTab("wrong")} className={"rounded px-3 py-1 " + (tab === "wrong" ? "bg-blue-600 text-white" : "border")}>Wrong</button>
-        <button onClick={() => setTab("bookmarked")} className={"rounded px-3 py-1 " + (tab === "bookmarked" ? "bg-blue-600 text-white" : "border")}>Bookmarked</button>
+      <div className="mb-5 flex gap-2">
+        <button onClick={() => setTab("wrong")} className="filter-chip" data-active={tab === "wrong"}>Wrong</button>
+        <button onClick={() => setTab("bookmarked")} className="filter-chip" data-active={tab === "bookmarked"}>Bookmarked</button>
       </div>
-      <ul className="space-y-2">
-        {items.length === 0 && <li className="text-neutral-500">Nothing here yet.</li>}
+      <ul className="space-y-3">
+        {items.length === 0 && <li className="text-[15px] text-ink-3">Nothing here yet.</li>}
         {items.map(it => (
-          <li key={it.id} className="rounded border p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800">
-            <Link href={`/review/${it.id}`} className="block">
-              <div className="text-xs text-neutral-500">{it.domain} &bull; {it.skill} &bull; {it.difficulty}</div>
-              <div className="line-clamp-2 mt-1 font-serif">{it.stimulus}</div>
+          <li key={it.id} className="paper-card-flat transition hover:border-oxblood">
+            <Link href={`/review/${it.id}`} className="block px-5 py-4">
+              <div className="text-[12px] font-bold uppercase tracking-wide text-ink-3">{it.domain} &bull; {it.skill} &bull; {it.difficulty}</div>
+              <div className="line-clamp-2 mt-1.5 text-[15px] text-ink">{it.stimulus}</div>
             </Link>
           </li>
         ))}

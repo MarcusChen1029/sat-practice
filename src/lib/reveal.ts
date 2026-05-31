@@ -1,4 +1,4 @@
-import type { PublicQuestion, RevealedQuestion, ChoiceLetter } from "./types";
+import type { PublicQuestion, RevealedQuestion, ChoiceLetter, VisualData } from "./types";
 
 type DbChoice = {
   letter: string;
@@ -25,9 +25,9 @@ type DbQuestion = {
   choices: DbChoice[];
 };
 
-function parseVisualData(raw: string | null): unknown | null {
+function parseVisualData(raw: string | null): VisualData | null {
   if (raw == null) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+  try { return JSON.parse(raw) as VisualData; } catch { return null; }
 }
 
 function sortChoices(choices: DbChoice[]): DbChoice[] {

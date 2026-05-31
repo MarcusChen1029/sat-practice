@@ -1,53 +1,45 @@
 "use client";
-import Image from "next/image";
 import clsx from "clsx";
 import type { PublicQuestion } from "@/lib/types";
+import { VisualRenderer } from "./VisualRenderer";
 
 const difficultyColor: Record<string, string> = {
-  Easy: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-900",
-  Medium: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-900",
-  Hard: "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:ring-rose-900",
+  Easy: "text-olive",
+  Medium: "text-marigold",
+  Hard: "text-terracotta",
 };
 
 export function QuestionCard({ q, children }: { q: PublicQuestion; children: React.ReactNode }) {
   return (
-    <article className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200/70 sm:p-8 dark:bg-slate-900/70 dark:ring-slate-800">
-      <div className="mb-5 flex flex-wrap items-center gap-1.5 text-[11px]">
-        <span className="chip bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:ring-sky-900">
-          {q.test}
-        </span>
-        <span className="chip bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-950/50 dark:text-violet-300 dark:ring-violet-900">
-          {q.domain}
-        </span>
-        <span className="chip bg-teal-50 text-teal-700 ring-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:ring-teal-900">
-          {q.skill}
-        </span>
-        <span
-          className={clsx(
-            "chip",
-            difficultyColor[q.difficulty] ??
-              "bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700",
-          )}
-        >
+    <article className="paper-card overflow-hidden">
+      {/* Header strip */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-rule bg-paper-2 px-5 py-3">
+        <div className="flex items-center gap-2 text-[13px] font-semibold text-ink-2">
+          <span>{q.domain}</span>
+          <span className="text-ink-3">·</span>
+          <span className="font-normal text-ink-3">{q.skill}</span>
+        </div>
+        <span className={clsx("text-[12px] font-bold uppercase tracking-wide", difficultyColor[q.difficulty] ?? "text-ink-2")}>
           {q.difficulty}
         </span>
       </div>
-      {q.hasVisual && q.visualImagePath && (
-        <div className="my-5 overflow-hidden rounded-xl ring-1 ring-slate-200 dark:ring-slate-800">
-          <Image
-            src={q.visualImagePath}
-            alt="Question visual"
-            width={800}
-            height={460}
-            className="h-auto w-full"
-          />
+
+      {/* Split: passage (left) | question + choices (right) */}
+      <div className="grid gap-0 lg:grid-cols-2">
+        <div className="px-6 py-7 lg:border-r lg:border-rule">
+          {q.hasVisual && q.visualData && <VisualRenderer data={q.visualData} />}
+          <p className="whitespace-pre-line text-[17px] leading-[1.7] text-ink">
+            {q.stimulus}
+          </p>
         </div>
-      )}
-      <p className="whitespace-pre-line font-serif text-[17px] leading-[1.8] text-slate-800 dark:text-slate-100">
-        {q.stimulus}
-      </p>
-      <p className="mt-6 text-[15px] font-semibold text-slate-900 dark:text-slate-50">{q.prompt}</p>
-      <div className="mt-5 space-y-2.5">{children}</div>
+
+        <div className="px-6 py-7">
+          <p className="text-[17px] font-semibold leading-snug text-ink">
+            {q.prompt}
+          </p>
+          <div className="mt-5 space-y-3">{children}</div>
+        </div>
+      </div>
     </article>
   );
 }
